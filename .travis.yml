@@ -1,0 +1,10 @@
+language: go
+
+go:
+  - 1.9.x
+
+env:
+  - TEST_DIR=GO/testing
+
+script:
+  - cd $TEST_DIR && go test -v
