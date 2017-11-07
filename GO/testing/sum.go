@@ -1,9 +1,9 @@
 package main
 
-func Sum(x int, y int) int {  
-    return x + y
+func Sum(x int, y int) int {
+	return x + y
 }
 
-func main() {  
-    Sum(5, 5)
+func main() {
+	Sum(35, 5)
 }
