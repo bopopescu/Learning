@@ -5,5 +5,5 @@ func Sum(x int, y int) int {
 }
 
 func main() {
-	Sum(35, 5)
+	Sum(5, 5)
 }
