@@ -3,10 +3,8 @@ version: '2'
 # 2 services, one for drupal, one for postgres
 
 services:
-  custom-drupal:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  drupal:
+    image: drupal:8.4.2-apache
     ports:
       - '8080:80'
     volumes:
@@ -20,9 +18,4 @@ services:
     image: postgres:10.1
     environment:
       - POSTGRES_PASSWORD=example
-    volumes:
-      - drupal-data:/var/lib/postgresql/data
-    restart: always 
-  
-volumes:
-  drupal-data:
+    restart: always
