@@ -126,7 +126,7 @@ class HadoopJobRunner(MRJobBinRunner, LogInterpretationMixin):
         'hadoop_log_dirs',
         'hadoop_streaming_jar',
         'hadoop_tmp_dir',
-        'spark_master',
+        'spark_main',
     }
 
     def __init__(self, **kwargs):
@@ -177,7 +177,7 @@ class HadoopJobRunner(MRJobBinRunner, LogInterpretationMixin):
             super(HadoopJobRunner, self)._default_opts(),
             dict(
                 hadoop_tmp_dir='tmp/mrjob',
-                spark_master='yarn',
+                spark_main='yarn',
             )
         )
 
@@ -418,7 +418,7 @@ class HadoopJobRunner(MRJobBinRunner, LogInterpretationMixin):
 
             # try to use a PTY if it's available
             try:
-                pid, master_fd = pty.fork()
+                pid, main_fd = pty.fork()
             except (AttributeError, OSError):
                 # no PTYs, just use Popen
 
@@ -447,12 +447,12 @@ class HadoopJobRunner(MRJobBinRunner, LogInterpretationMixin):
                 else:
                     log.debug('Invoking Hadoop via PTY')
 
-                    with os.fdopen(master_fd, 'rb') as master:
-                        # reading from master gives us the subprocess's
+                    with os.fdopen(main_fd, 'rb') as main:
+                        # reading from main gives us the subprocess's
                         # stderr and stdout (it's a fake terminal)
                         step_interpretation = (
                             _interpret_hadoop_jar_command_stderr(
-                                master,
+                                main,
                                 record_callback=_log_record_from_hadoop))
                         _, returncode = os.waitpid(pid, 0)
 
@@ -486,13 +486,13 @@ class HadoopJobRunner(MRJobBinRunner, LogInterpretationMixin):
 
     def _warn_about_spark_archives(self, step):
         """If *step* is a Spark step, the *upload_archives* option is set,
-        and *spark_master* is not ``'yarn'``, warn that *upload_archives*
+        and *spark_main* is not ``'yarn'``, warn that *upload_archives*
         will be ignored by Spark."""
         if (_is_spark_step_type(step['type']) and
-                self._opts['spark_master'] != 'yarn' and
+                self._opts['spark_main'] != 'yarn' and
                 self._opts['upload_archives']):
             log.warning('Spark will probably ignore archives because'
-                        " spark_master is not set to 'yarn'")
+                        " spark_main is not set to 'yarn'")
 
     def _args_for_step(self, step_num):
         step = self._get_step(step_num)
@@ -545,7 +545,7 @@ class HadoopJobRunner(MRJobBinRunner, LogInterpretationMixin):
         return args
 
     def _spark_submit_arg_prefix(self):
-        return ['--master', self._opts['spark_master']]
+        return ['--main', self._opts['spark_main']]
 
     def _env_for_step(self, step_num):
         step = self._get_step(step_num)

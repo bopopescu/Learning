@@ -74,7 +74,7 @@ _DEFAULT_CLOUD_FS_SYNC_SECS = 5.0
 _DEFAULT_CLOUD_TMP_DIR_OBJECT_TTL_DAYS = 90
 
 # https://cloud.google.com/dataproc/reference/rest/v1/projects.regions.clusters#GceClusterConfig  # noqa
-# NOTE - added cloud-platform so we can invoke gcloud commands from the cluster master (used for auto termination script)  # noqa
+# NOTE - added cloud-platform so we can invoke gcloud commands from the cluster main (used for auto termination script)  # noqa
 _DEFAULT_GCE_SERVICE_ACCOUNT_SCOPES = [
     'https://www.googleapis.com/auth/cloud.useraccounts.readonly',
     'https://www.googleapis.com/auth/devstorage.read_write',
@@ -221,10 +221,10 @@ class DataprocJobRunner(HadoopInTheCloudJobRunner):
         """
         super(DataprocJobRunner, self).__init__(**kwargs)
 
-        # Dataproc requires a master and >= 2 core instances
+        # Dataproc requires a main and >= 2 core instances
         # num_core_instances refers ONLY to number of CORE instances and does
-        # NOT include the required 1 instance for master
-        # In other words, minimum cluster size is 3 machines, 1 master and 2
+        # NOT include the required 1 instance for main
+        # In other words, minimum cluster size is 3 machines, 1 main and 2
         # "num_core_instances" workers
         if self._opts['num_core_instances'] < _DATAPROC_MIN_WORKERS:
             raise DataprocException(
@@ -298,7 +298,7 @@ class DataprocJobRunner(HadoopInTheCloudJobRunner):
                  cloud_fs_sync_secs=_DEFAULT_CLOUD_FS_SYNC_SECS,
                  image_version=_DEFAULT_IMAGE_VERSION,
                  instance_type=_DEFAULT_INSTANCE_TYPE,
-                 master_instance_type=_DEFAULT_INSTANCE_TYPE,
+                 main_instance_type=_DEFAULT_INSTANCE_TYPE,
                  max_hours_idle=_DEFAULT_MAX_HOURS_IDLE,
                  num_core_instances=_DATAPROC_MIN_WORKERS,
                  num_task_instances=0,
@@ -399,7 +399,7 @@ class DataprocJobRunner(HadoopInTheCloudJobRunner):
 
         Tar up mrjob if bootstrap_mrjob is True.
 
-        Create the master bootstrap script if necessary.
+        Create the main bootstrap script if necessary.
 
         """
         # lazily create mrjob.zip
@@ -413,10 +413,10 @@ class DataprocJobRunner(HadoopInTheCloudJobRunner):
             self._upload_mgr.add(path)
 
         # now that we know where the above files live, we can create
-        # the master bootstrap script
-        self._create_master_bootstrap_script_if_needed()
-        if self._master_bootstrap_script_path:
-            self._upload_mgr.add(self._master_bootstrap_script_path)
+        # the main bootstrap script
+        self._create_main_bootstrap_script_if_needed()
+        if self._main_bootstrap_script_path:
+            self._upload_mgr.add(self._main_bootstrap_script_path)
             self._upload_mgr.add(_MAX_HOURS_IDLE_BOOTSTRAP_ACTION_PATH)
 
     def _add_job_files_for_upload(self):
@@ -786,9 +786,9 @@ class DataprocJobRunner(HadoopInTheCloudJobRunner):
 
     def _cluster_create_kwargs(self):
         gcs_init_script_uris = []
-        if self._master_bootstrap_script_path:
+        if self._main_bootstrap_script_path:
             gcs_init_script_uris.append(
-                self._upload_mgr.uri(self._master_bootstrap_script_path))
+                self._upload_mgr.uri(self._main_bootstrap_script_path))
 
             # always add idle termination script
             # add it last, so that we don't count bootstrapping as idle time
@@ -817,9 +817,9 @@ class DataprocJobRunner(HadoopInTheCloudJobRunner):
         )
 
         # Task tracker
-        master_conf = _gcp_instance_group_config(
+        main_conf = _gcp_instance_group_config(
             project=self._gcp_project, zone=self._gce_zone,
-            count=1, instance_type=self._opts['master_instance_type']
+            count=1, instance_type=self._opts['main_instance_type']
         )
 
         # Compute + storage
@@ -837,7 +837,7 @@ class DataprocJobRunner(HadoopInTheCloudJobRunner):
             is_preemptible=True
         )
 
-        cluster_config['masterConfig'] = master_conf
+        cluster_config['mainConfig'] = main_conf
         cluster_config['workerConfig'] = worker_conf
         if self._opts['num_task_instances']:
             cluster_config['secondaryWorkerConfig'] = secondary_worker_conf

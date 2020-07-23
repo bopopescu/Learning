@@ -560,14 +560,14 @@ def _datetime_to_gcptime(in_datetime=None):
 
 def _create_cluster_resp(
         project=None, zone=None, cluster=None, image_version=None,
-        machine_type=None, machine_type_master=None, num_core_instancess=None,
+        machine_type=None, machine_type_main=None, num_core_instancess=None,
         now=None):
     """Fake Dataproc Cluster metadata"""
     project = project or _TEST_PROJECT
     zone = zone or _CLUSTER_ZONE
     cluster = cluster or _DATAPROC_CLUSTER
     image_version = image_version or _CLUSTER_IMAGE_VERSION
-    machine_type_master = machine_type_master or _CLUSTER_MACHINE_TYPE
+    machine_type_main = machine_type_main or _CLUSTER_MACHINE_TYPE
     machine_type = machine_type or _CLUSTER_MACHINE_TYPE
     num_core_instancess = num_core_instancess or _CLUSTER_NUM_CORE_INSTANCESS
 
@@ -589,7 +589,7 @@ def _create_cluster_resp(
         ],
     }
 
-    master_conf = {
+    main_conf = {
         "numInstances": 1,
         "instanceNames": [
             "%(cluster)s-m" % locals()
@@ -599,7 +599,7 @@ def _create_cluster_resp(
             "global/images/dataproc-1-0-20160302-200123"),
         "machineTypeUri": (
             "https://www.googleapis.com/compute/v1/projects/%(project)s/"
-            "zones/%(zone)s/machineTypes/%(machine_type_master)s" % locals()),
+            "zones/%(zone)s/machineTypes/%(machine_type_main)s" % locals()),
         "diskConfig": {
             "bootDiskSizeGb": 500
         },
@@ -655,7 +655,7 @@ def _create_cluster_resp(
         "config": {
             "configBucket": "dataproc-801485be-0997-40e7-84a7-00926031747c-us",
             "gceClusterConfig": gce_cluster_conf,
-            "masterConfig": master_conf,
+            "mainConfig": main_conf,
             "workerConfig": worker_conf,
             "softwareConfig": software_conf
         },

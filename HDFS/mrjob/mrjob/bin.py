@@ -530,7 +530,7 @@ class MRJobBinRunner(MRJobRunner):
         return self._opts['spark_submit_bin'] or ['spark-submit']
 
     def _spark_submit_arg_prefix(self):
-        """Runner-specific args to spark submit (e.g. ['--master', 'yarn'])"""
+        """Runner-specific args to spark submit (e.g. ['--main', 'yarn'])"""
         return []
 
     def _spark_submit_args(self, step_num):
@@ -560,7 +560,7 @@ class MRJobBinRunner(MRJobRunner):
         jobconf = {}
         for key, value in self._spark_cmdenv(step_num).items():
             jobconf['spark.executorEnv.%s' % key] = value
-            jobconf['spark.yarn.appMasterEnv.%s' % key] = value
+            jobconf['spark.yarn.appMainEnv.%s' % key] = value
 
         jobconf.update(self._jobconf_for_step(step_num))
 

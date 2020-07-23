@@ -1497,14 +1497,14 @@ class SparkSubmitArgPrefixTestCase(MockHadoopTestCase):
 
         self.assertEqual(
             runner._spark_submit_arg_prefix(),
-            ['--master', 'yarn'])
+            ['--main', 'yarn'])
 
-    def test_spark_master(self):
-        runner = HadoopJobRunner(spark_master='local')
+    def test_spark_main(self):
+        runner = HadoopJobRunner(spark_main='local')
 
         self.assertEqual(
             runner._spark_submit_arg_prefix(),
-            ['--master', 'local'])
+            ['--main', 'local'])
 
 
 class WarnAboutSparkArchivesTestCase(MockHadoopTestCase):
@@ -1518,7 +1518,7 @@ class WarnAboutSparkArchivesTestCase(MockHadoopTestCase):
         fake_archive = self.makefile('fake.tar.gz')
 
         job = MRNullSpark(['-r', 'hadoop',
-                           '--spark-master', 'local',
+                           '--spark-main', 'local',
                            '--archive', fake_archive])
         job.sandbox()
 
@@ -1531,7 +1531,7 @@ class WarnAboutSparkArchivesTestCase(MockHadoopTestCase):
         fake_archive = self.makefile('fake.tar.gz')
 
         job = MRTwoStepJob(['-r', 'hadoop',
-                            '--spark-master', 'local',
+                            '--spark-main', 'local',
                             '--archive', fake_archive])
         job.sandbox()
 
@@ -1540,11 +1540,11 @@ class WarnAboutSparkArchivesTestCase(MockHadoopTestCase):
 
         self.assertFalse(self.log.warning.called)
 
-    def test_requires_non_yarn_spark_master(self):
+    def test_requires_non_yarn_spark_main(self):
         fake_archive = self.makefile('fake.tar.gz')
 
         job = MRNullSpark(['-r', 'hadoop',
-                           '--spark-master', 'yarn',
+                           '--spark-main', 'yarn',
                            '--archive', fake_archive])
         job.sandbox()
 
@@ -1557,7 +1557,7 @@ class WarnAboutSparkArchivesTestCase(MockHadoopTestCase):
         fake_file = self.makefile('fake.txt')
 
         job = MRNullSpark(['-r', 'hadoop',
-                           '--spark-master', 'local',
+                           '--spark-main', 'local',
                            '--file', fake_file])
         job.sandbox()
 

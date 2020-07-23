@@ -146,7 +146,7 @@ class TestLegacyPoolHashAndName(TestCase):
         actions = [
             dict(
                 Args=['pool-0123456789abcdef0123456789abcdef', 'reflecting'],
-                Name='master',
+                Name='main',
             ),
         ]
 
@@ -159,7 +159,7 @@ class TestLegacyPoolHashAndName(TestCase):
             dict(Args=[], Name='action 1'),
             dict(
                 Args=['pool-0123456789abcdef0123456789abcdef', 'reflecting'],
-                Name='master',
+                Name='main',
             ),
         ]
 
@@ -167,12 +167,12 @@ class TestLegacyPoolHashAndName(TestCase):
                          ('0123456789abcdef0123456789abcdef', 'reflecting'))
 
     def test_pooled_cluster_with_max_hours_idle(self):
-        # max hours idle is added AFTER the master bootstrap script,
+        # max hours idle is added AFTER the main bootstrap script,
         # which was a problem when we just look at the last action
         actions = [
             dict(
                 Args=['pool-0123456789abcdef0123456789abcdef', 'reflecting'],
-                Name='master',
+                Name='main',
             ),
             dict(
                 Args=['900', '300'],
@@ -187,7 +187,7 @@ class TestLegacyPoolHashAndName(TestCase):
         actions = [
             dict(
                 Args=['cowsay', 'mrjob'],
-                Name='master',
+                Name='main',
             ),
         ]
 
@@ -197,7 +197,7 @@ class TestLegacyPoolHashAndName(TestCase):
         actions = [
             dict(
                 Args=['cowsay', '-b', 'mrjob'],
-                Name='master',
+                Name='main',
             ),
         ]
 
@@ -207,13 +207,13 @@ class TestLegacyPoolHashAndName(TestCase):
         actions = [
             dict(
                 Args=['pool-0123456789abcdef0123456789abcdef'],
-                Name='master',
+                Name='main',
             ),
         ]
 
         self.assertEqual(_legacy_pool_hash_and_name(actions), (None, None))
 
-    def test_bootstrap_action_isnt_named_master(self):
+    def test_bootstrap_action_isnt_named_main(self):
         actions = [
             dict(
                 Args=['pool-0123456789abcdef0123456789abcdef', 'reflecting'],

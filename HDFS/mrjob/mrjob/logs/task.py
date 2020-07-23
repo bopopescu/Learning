@@ -36,7 +36,7 @@ _SPARK_APP_EXITED_RE = re.compile(
     r'^\s*User application exited with status \d+\s*$')
 
 # the name of the logger that logs the above
-_SPARK_APP_MASTER_LOGGER = 'ApplicationMaster'
+_SPARK_APP_MASTER_LOGGER = 'ApplicationMain'
 
 # this seems to only happen for S3. Not sure if this happens in YARN
 _OPENING_FOR_READING_RE = re.compile(
@@ -305,7 +305,7 @@ def _interpret_spark_task_logs(fs, matches, partial=True, log_callback=None):
     this dictionary will contain the key *partial*, set to True.
 
     *task_error* will only be set if we read from stdout (if the Spark
-    application master fails). Otherwise, the Python traceback will
+    application main fails). Otherwise, the Python traceback will
     be included in the java stack trace in *hadoop_error*.
     """
     result = {}
@@ -332,7 +332,7 @@ def _interpret_spark_task_logs(fs, matches, partial=True, log_callback=None):
         if stdout_path and check_stdout:
             if log_callback:
                 log_callback(stdout_path)
-            # the stderr of the application master ends up in "stdout"
+            # the stderr of the application main ends up in "stdout"
             task_error = _parse_task_stderr(_cat_log(fs, stdout_path))
 
             if task_error:

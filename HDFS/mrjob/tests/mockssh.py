@@ -107,7 +107,7 @@ def rel_posix_to_abs_local(host, path, environ=None):
     return os.path.join(root, *path.split('/'))
 
 
-_WORKER_ADDR_RE = re.compile(r'^(?P<master>.*?)!(?P<worker>.*?)=(?P<dir>.*)$')
+_WORKER_ADDR_RE = re.compile(r'^(?P<main>.*?)!(?P<worker>.*?)=(?P<dir>.*)$')
 _SCP_RE = re.compile(r'cat > (?P<filename>.*?) &&.*$')
 
 
@@ -200,7 +200,7 @@ def main(stdin, stdout, stderr, args, environ):
 
         # Recursively call for workers
         if remote_args[0].split('/')[-1] == 'ssh':
-            # Actually check the existence of the key file on the master node
+            # Actually check the existence of the key file on the main node
             while not remote_args[remote_arg_pos] == '-i':
                 remote_arg_pos += 1
 

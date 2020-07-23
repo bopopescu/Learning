@@ -62,7 +62,7 @@ class AuditUsageTestCase(ToolTestCase):
         emr_client.run_job_flow(
             Name='no name',
             Instances=dict(
-                MasterInstanceType='m1.medium',
+                MainInstanceType='m1.medium',
                 InstanceCount=1),
             JobFlowRole='fake-instance-profile',
             ServiceRole='fake-service-role',
@@ -675,7 +675,7 @@ class ClusterToFullSummaryTestCase(TestCase):
         self._test_new_or_legacy_pooled_cluster(BootstrapActions=[
                 dict(Args=[], Name='empty'),
                 dict(Args=['pool-0123456789abcdef0123456789abcdef',
-                           'reflecting'], Name='master'),
+                           'reflecting'], Name='main'),
             ],
         )
 

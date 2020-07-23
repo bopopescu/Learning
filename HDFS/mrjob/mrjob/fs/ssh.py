@@ -147,9 +147,9 @@ class SSHFilesystem(Filesystem):
 
     def _ssh_copy_key(self, address):
         """Copy ``self._ec2_key_pair_file`` to all hosts in *address*
-        that need it. ``'master!core1!foo'``, we'll first copy a key
-        pair file to ``core1`` (via ``master``) and then to ``foo``
-        (via ``master`` and ``core``).
+        that need it. ``'main!core1!foo'``, we'll first copy a key
+        pair file to ``core1`` (via ``main``) and then to ``foo``
+        (via ``main`` and ``core``).
 
         If there isn't a ``!`` in *address*, do nothing.
 

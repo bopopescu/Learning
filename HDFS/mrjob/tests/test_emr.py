@@ -366,7 +366,7 @@ class ExistingClusterTestCase(MockBoto3TestCase):
             Instances=dict(
                 InstanceCount=1,
                 KeepJobFlowAliveWhenNoSteps=True,
-                MasterInstanceType='m1.medium',
+                MainInstanceType='m1.medium',
             ),
             JobFlowRole='fake-instance-profile',
             Name='Development Cluster',
@@ -388,7 +388,7 @@ class ExistingClusterTestCase(MockBoto3TestCase):
 
             # Issue 182: don't create the bootstrap script when
             # attaching to another cluster
-            self.assertIsNone(runner._master_bootstrap_script_path)
+            self.assertIsNone(runner._main_bootstrap_script_path)
 
             results.extend(mr_job.parse_output(runner.cat_output()))
 
@@ -402,7 +402,7 @@ class ExistingClusterTestCase(MockBoto3TestCase):
             Instances=dict(
                 InstanceCount=1,
                 KeepJobFlowAliveWhenNoSteps=True,
-                MasterInstanceType='m1.medium',
+                MainInstanceType='m1.medium',
             ),
             JobFlowRole='fake-instance-profile',
             Name='Development Cluster',
@@ -915,59 +915,59 @@ class InstanceGroupAndFleetTestCase(MockBoto3TestCase):
     def test_defaults(self):
         self._test_instance_groups(
             {},
-            master=(1, 'm1.medium', None))
+            main=(1, 'm1.medium', None))
 
     def test_instance_type_single_instance(self):
         self._test_instance_groups(
             {'instance_type': 'c1.xlarge'},
-            master=(1, 'c1.xlarge', None))
+            main=(1, 'c1.xlarge', None))
 
     def test_instance_type_multiple_instances(self):
         self._test_instance_groups(
             {'instance_type': 'c1.xlarge', 'num_core_instances': 2},
             core=(2, 'c1.xlarge', None),
-            master=(1, 'm1.medium', None))
+            main=(1, 'm1.medium', None))
 
-    def test_explicit_master_and_core_instance_types(self):
+    def test_explicit_main_and_core_instance_types(self):
         self._test_instance_groups(
-            {'master_instance_type': 'm1.large'},
-            master=(1, 'm1.large', None))
+            {'main_instance_type': 'm1.large'},
+            main=(1, 'm1.large', None))
 
         self._test_instance_groups(
             {'core_instance_type': 'm2.xlarge',
              'num_core_instances': 2},
             core=(2, 'm2.xlarge', None),
-            master=(1, 'm1.medium', None))
+            main=(1, 'm1.medium', None))
 
         self._test_instance_groups(
-            {'master_instance_type': 'm1.large',
+            {'main_instance_type': 'm1.large',
              'core_instance_type': 'm2.xlarge',
              'num_core_instances': 2},
             core=(2, 'm2.xlarge', None),
-            master=(1, 'm1.large', None))
+            main=(1, 'm1.large', None))
 
     def test_2_x_ami_defaults_single_node(self):
         # m1.small still works with Hadoop 1, and it's cheaper
         self._test_instance_groups(
             dict(image_version='2.4.11'),
-            master=(1, 'm1.small', None))
+            main=(1, 'm1.small', None))
 
     def test_2_x_ami_defaults_multiple_nodes(self):
         self._test_instance_groups(
             dict(image_version='2.4.11', num_core_instances=2),
             core=(2, 'm1.small', None),
-            master=(1, 'm1.small', None))
+            main=(1, 'm1.small', None))
 
     def test_release_label_hides_image_version(self):
         self._test_instance_groups(
             dict(release_label='emr-4.0.0', image_version='2.4.11'),
-            master=(1, 'm1.medium', None))
+            main=(1, 'm1.medium', None))
 
     def test_spark_defaults_single_node(self):
         # Spark needs at least m1.large
         self._test_instance_groups(
             dict(image_version='4.0.0', applications=['Spark']),
-            master=(1, 'm1.large', None))
+            main=(1, 'm1.large', None))
 
     def test_spark_defaults_multiple_nodes(self):
         # Spark can get away with m1.medium for the resource manager
@@ -976,21 +976,21 @@ class InstanceGroupAndFleetTestCase(MockBoto3TestCase):
                  applications=['Spark'],
                  num_core_instances=2),
             core=(2, 'm1.large', None),
-            master=(1, 'm1.medium', None))
+            main=(1, 'm1.medium', None))
 
     def test_explicit_instance_types_take_precedence(self):
         self._test_instance_groups(
             {'instance_type': 'c1.xlarge',
-             'master_instance_type': 'm1.large'},
-            master=(1, 'm1.large', None))
+             'main_instance_type': 'm1.large'},
+            main=(1, 'm1.large', None))
 
         self._test_instance_groups(
             {'instance_type': 'c1.xlarge',
-             'master_instance_type': 'm1.large',
+             'main_instance_type': 'm1.large',
              'core_instance_type': 'm2.xlarge',
              'num_core_instances': 2},
             core=(2, 'm2.xlarge', None),
-            master=(1, 'm1.large', None))
+            main=(1, 'm1.large', None))
 
     def test_cmd_line_opts_beat_mrjob_conf(self):
         # set instance_type in mrjob.conf, 1 instance
@@ -998,11 +998,11 @@ class InstanceGroupAndFleetTestCase(MockBoto3TestCase):
 
         self._test_instance_groups(
             {},
-            master=(1, 'c1.xlarge', None))
+            main=(1, 'c1.xlarge', None))
 
         self._test_instance_groups(
-            {'master_instance_type': 'm1.large'},
-            master=(1, 'm1.large', None))
+            {'main_instance_type': 'm1.large'},
+            main=(1, 'm1.large', None))
 
         # set instance_type in mrjob.conf, 3 instances
         self.set_in_mrjob_conf(instance_type='c1.xlarge',
@@ -1011,78 +1011,78 @@ class InstanceGroupAndFleetTestCase(MockBoto3TestCase):
         self._test_instance_groups(
             {},
             core=(2, 'c1.xlarge', None),
-            master=(1, 'm1.medium', None))
+            main=(1, 'm1.medium', None))
 
         self._test_instance_groups(
-            {'master_instance_type': 'm1.large',
+            {'main_instance_type': 'm1.large',
              'core_instance_type': 'm2.xlarge'},
             core=(2, 'm2.xlarge', None),
-            master=(1, 'm1.large', None))
+            main=(1, 'm1.large', None))
 
-        # set master in mrjob.conf, 1 instance
-        self.set_in_mrjob_conf(master_instance_type='m1.large')
+        # set main in mrjob.conf, 1 instance
+        self.set_in_mrjob_conf(main_instance_type='m1.large')
 
         self._test_instance_groups(
             {},
-            master=(1, 'm1.large', None))
+            main=(1, 'm1.large', None))
 
         self._test_instance_groups(
             {'instance_type': 'c1.xlarge'},
-            master=(1, 'c1.xlarge', None))
+            main=(1, 'c1.xlarge', None))
 
-        # set master and worker in mrjob.conf, 2 instances
-        self.set_in_mrjob_conf(master_instance_type='m1.large',
+        # set main and worker in mrjob.conf, 2 instances
+        self.set_in_mrjob_conf(main_instance_type='m1.large',
                                core_instance_type='m2.xlarge',
                                num_core_instances=2)
 
         self._test_instance_groups(
             {},
             core=(2, 'm2.xlarge', None),
-            master=(1, 'm1.large', None))
+            main=(1, 'm1.large', None))
 
         self._test_instance_groups(
             {'instance_type': 'c1.xlarge'},
             core=(2, 'c1.xlarge', None),
-            master=(1, 'm1.large', None))
+            main=(1, 'm1.large', None))
 
     def test_zero_core_instances(self):
         self._test_instance_groups(
-            {'master_instance_type': 'c1.medium',
+            {'main_instance_type': 'c1.medium',
              'num_core_instances': 0},
-            master=(1, 'c1.medium', None))
+            main=(1, 'c1.medium', None))
 
     def test_core_spot_instances(self):
         self._test_instance_groups(
-            {'master_instance_type': 'm1.large',
+            {'main_instance_type': 'm1.large',
              'core_instance_type': 'c1.medium',
              'core_instance_bid_price': '0.20',
              'num_core_instances': 5},
             core=(5, 'c1.medium', '0.20'),
-            master=(1, 'm1.large', None))
+            main=(1, 'm1.large', None))
 
     def test_core_on_demand_instances(self):
         self._test_instance_groups(
-            {'master_instance_type': 'm1.large',
+            {'main_instance_type': 'm1.large',
              'core_instance_type': 'c1.medium',
              'num_core_instances': 5},
             core=(5, 'c1.medium', None),
-            master=(1, 'm1.large', None))
+            main=(1, 'm1.large', None))
 
     def test_core_and_task_on_demand_instances(self):
         self._test_instance_groups(
-            {'master_instance_type': 'm1.large',
+            {'main_instance_type': 'm1.large',
              'core_instance_type': 'c1.medium',
              'num_core_instances': 5,
              'task_instance_type': 'm2.xlarge',
              'num_task_instances': 20,
              },
             core=(5, 'c1.medium', None),
-            master=(1, 'm1.large', None),
+            main=(1, 'm1.large', None),
             task=(20, 'm2.xlarge', None))
 
     def test_core_and_task_spot_instances(self):
         self._test_instance_groups(
-            {'master_instance_type': 'm1.large',
+            {'main_instance_type': 'm1.large',
              'core_instance_type': 'c1.medium',
              'core_instance_bid_price': '0.20',
              'num_core_instances': 10,
@@ -1091,11 +1091,11 @@ class InstanceGroupAndFleetTestCase(MockBoto3TestCase):
              'num_task_instances': 20,
              },
             core=(10, 'c1.medium', '0.20'),
-            master=(1, 'm1.large', None),
+            main=(1, 'm1.large', None),
             task=(20, 'm2.xlarge', '1.00'))
 
         self._test_instance_groups(
-            {'master_instance_type': 'm1.large',
+            {'main_instance_type': 'm1.large',
              'core_instance_type': 'c1.medium',
              'num_core_instances': 10,
              'task_instance_type': 'm2.xlarge',
@@ -1103,39 +1103,39 @@ class InstanceGroupAndFleetTestCase(MockBoto3TestCase):
              'num_task_instances': 20,
              },
             core=(10, 'c1.medium', None),
-            master=(1, 'm1.large', None),
+            main=(1, 'm1.large', None),
             task=(20, 'm2.xlarge', '1.00'))
 
-    def test_master_and_core_spot_instances(self):
+    def test_main_and_core_spot_instances(self):
         self._test_instance_groups(
-            {'master_instance_type': 'm1.large',
-             'master_instance_bid_price': '0.50',
+            {'main_instance_type': 'm1.large',
+             'main_instance_bid_price': '0.50',
              'core_instance_type': 'c1.medium',
              'core_instance_bid_price': '0.20',
              'num_core_instances': 10,
              },
             core=(10, 'c1.medium', '0.20'),
-            master=(1, 'm1.large', '0.50'))
+            main=(1, 'm1.large', '0.50'))
 
-    def test_master_spot_instance(self):
+    def test_main_spot_instance(self):
         self._test_instance_groups(
-            {'master_instance_type': 'm1.large',
-             'master_instance_bid_price': '0.50',
+            {'main_instance_type': 'm1.large',
+             'main_instance_bid_price': '0.50',
              },
-            master=(1, 'm1.large', '0.50'))
+            main=(1, 'm1.large', '0.50'))
 
     def test_zero_or_blank_bid_price_means_on_demand(self):
         self._test_instance_groups(
-            {'master_instance_bid_price': '0',
+            {'main_instance_bid_price': '0',
              },
-            master=(1, 'm1.medium', None))
+            main=(1, 'm1.medium', None))
 
         self._test_instance_groups(
             {'num_core_instances': 3,
              'core_instance_bid_price': '0.00',
              },
             core=(3, 'm1.medium', None),
-            master=(1, 'm1.medium', None))
+            main=(1, 'm1.medium', None))
 
         self._test_instance_groups(
             {'num_core_instances': 3,
@@ -1143,14 +1143,14 @@ class InstanceGroupAndFleetTestCase(MockBoto3TestCase):
              'task_instance_bid_price': '',
              },
             core=(3, 'm1.medium', None),
-            master=(1, 'm1.medium', None),
+            main=(1, 'm1.medium', None),
             task=(5, 'm1.medium', None))
 
     def test_pass_invalid_bid_prices_through_to_emr(self):
         self.assertRaises(
             ClientError,
             self._test_instance_groups,
-            {'master_instance_bid_price': 'all the gold in California'})
+            {'main_instance_bid_price': 'all the gold in California'})
 
     def test_task_type_defaults_to_core_type(self):
         self._test_instance_groups(
@@ -1159,7 +1159,7 @@ class InstanceGroupAndFleetTestCase(MockBoto3TestCase):
              'num_task_instances': 20,
              },
             core=(5, 'c1.medium', None),
-            master=(1, 'm1.medium', None),
+            main=(1, 'm1.medium', None),
             task=(20, 'c1.medium', None))
 
     def test_explicit_instance_groups(self):
@@ -1171,7 +1171,7 @@ class InstanceGroupAndFleetTestCase(MockBoto3TestCase):
                     InstanceType='c1.medium',
                 )],
             ),
-            master=(1, 'c1.medium', None))
+            main=(1, 'c1.medium', None))
 
     def test_explicit_instance_groups_beats_implicit(self):
         # instance_groups overrides specific instance group configs
@@ -1183,10 +1183,10 @@ class InstanceGroupAndFleetTestCase(MockBoto3TestCase):
                     InstanceCount=1,
                     InstanceType='c1.medium',
                 )],
-                master_instance_type='m1.large',
+                main_instance_type='m1.large',
                 num_core_instances=3,
             ),
-            master=(1, 'c1.medium', None))
+            main=(1, 'c1.medium', None))
 
     def test_explicit_instance_fleets(self):
         self._test_uses_instance_fleets(
@@ -1210,7 +1210,7 @@ class InstanceGroupAndFleetTestCase(MockBoto3TestCase):
                     InstanceCount=1,
                     InstanceType='c1.medium',
                 )],
-                master_instance_type='m1.large',
+                main_instance_type='m1.large',
                 num_core_instances=3,
             ),
         )
@@ -1226,7 +1226,7 @@ class InstanceGroupAndFleetTestCase(MockBoto3TestCase):
 
         self._test_instance_groups(
             dict(num_core_instances=3),
-            master=(1, 'm1.medium', None),
+            main=(1, 'm1.medium', None),
             core=(3, 'm1.medium', None)
         )
 
@@ -1239,12 +1239,12 @@ class InstanceGroupAndFleetTestCase(MockBoto3TestCase):
 
         self._test_instance_groups(
             {},
-            master=(1, 'c1.medium', None)
+            main=(1, 'c1.medium', None)
         )
 
         self._test_instance_groups(
             dict(num_core_instances=3),
-            master=(1, 'm1.medium', None),
+            main=(1, 'm1.medium', None),
             core=(3, 'm1.medium', None)
         )
 
@@ -1366,24 +1366,24 @@ class TestSSHLs(MockBoto3TestCase):
     def test_ssh_ls(self):
         self.add_worker()
 
-        mock_ssh_dir('testmaster', 'test')
-        mock_ssh_file('testmaster', posixpath.join('test', 'one'), b'')
-        mock_ssh_file('testmaster', posixpath.join('test', 'two'), b'')
-        mock_ssh_dir('testmaster!testworker0', 'test')
-        mock_ssh_file('testmaster!testworker0',
+        mock_ssh_dir('testmain', 'test')
+        mock_ssh_file('testmain', posixpath.join('test', 'one'), b'')
+        mock_ssh_file('testmain', posixpath.join('test', 'two'), b'')
+        mock_ssh_dir('testmain!testworker0', 'test')
+        mock_ssh_file('testmain!testworker0',
                       posixpath.join('test', 'three'), b'')
 
         self.assertEqual(
-            sorted(self.runner.fs.ls('ssh://testmaster/test')),
-            ['ssh://testmaster/test/one', 'ssh://testmaster/test/two'])
+            sorted(self.runner.fs.ls('ssh://testmain/test')),
+            ['ssh://testmain/test/one', 'ssh://testmain/test/two'])
 
         self.assertEqual(
-            list(self.runner.fs.ls('ssh://testmaster!testworker0/test')),
-            ['ssh://testmaster!testworker0/test/three'])
+            list(self.runner.fs.ls('ssh://testmain!testworker0/test')),
+            ['ssh://testmain!testworker0/test/three'])
 
         # ls() is a generator, so the exception won't fire until we list() it
         self.assertRaises(IOError, list,
-                          self.runner.fs.ls('ssh://testmaster/does_not_exist'))
+                          self.runner.fs.ls('ssh://testmain/does_not_exist'))
 
 
 class NoBoto3TestCase(SandboxedTestCase):
@@ -1398,7 +1398,7 @@ class NoBoto3TestCase(SandboxedTestCase):
         self.assertRaises(ImportError, EMRJobRunner, conf_paths=[])
 
 
-class MasterBootstrapScriptTestCase(MockBoto3TestCase):
+class MainBootstrapScriptTestCase(MockBoto3TestCase):
 
     def test_usr_bin_env(self):
         runner = EMRJobRunner(conf_paths=[],
@@ -1407,15 +1407,15 @@ class MasterBootstrapScriptTestCase(MockBoto3TestCase):
 
         runner._add_bootstrap_files_for_upload()
 
-        self.assertIsNotNone(runner._master_bootstrap_script_path)
-        self.assertTrue(os.path.exists(runner._master_bootstrap_script_path))
+        self.assertIsNotNone(runner._main_bootstrap_script_path)
+        self.assertTrue(os.path.exists(runner._main_bootstrap_script_path))
 
-        with open(runner._master_bootstrap_script_path) as f:
+        with open(runner._main_bootstrap_script_path) as f:
             lines = [line.rstrip() for line in f]
 
         self.assertEqual(lines[0], '#!/usr/bin/env bash -e')
 
-    def _test_create_master_bootstrap_script(
+    def _test_create_main_bootstrap_script(
             self, image_version=None, expected_python_bin=PYTHON_BIN):
 
         # create a fake src tarball
@@ -1434,10 +1434,10 @@ class MasterBootstrapScriptTestCase(MockBoto3TestCase):
 
         runner._add_bootstrap_files_for_upload()
 
-        self.assertIsNotNone(runner._master_bootstrap_script_path)
-        self.assertTrue(os.path.exists(runner._master_bootstrap_script_path))
+        self.assertIsNotNone(runner._main_bootstrap_script_path)
+        self.assertTrue(os.path.exists(runner._main_bootstrap_script_path))
 
-        with open(runner._master_bootstrap_script_path) as f:
+        with open(runner._main_bootstrap_script_path) as f:
             lines = [line.rstrip() for line in f]
 
         if version_gte(image_version or _DEFAULT_IMAGE_VERSION,
@@ -1494,17 +1494,17 @@ class MasterBootstrapScriptTestCase(MockBoto3TestCase):
         self.assertIn('  sudo ' + expected_python_bin + ' -m compileall -q -f'
                       ' $__mrjob_PYTHON_LIB/mrjob && true', lines)
 
-    def test_create_master_bootstrap_script(self):
+    def test_create_main_bootstrap_script(self):
         # this tests 4.x
-        self._test_create_master_bootstrap_script()
+        self._test_create_main_bootstrap_script()
 
-    def test_create_master_bootstrap_script_on_3_11_0_ami(self):
-        self._test_create_master_bootstrap_script(
+    def test_create_main_bootstrap_script_on_3_11_0_ami(self):
+        self._test_create_main_bootstrap_script(
             expected_python_bin=('python2.7' if PY2 else PYTHON_BIN),
             image_version='3.11.0')
 
-    def test_create_master_bootstrap_script_on_2_4_11_ami(self):
-        self._test_create_master_bootstrap_script(
+    def test_create_main_bootstrap_script_on_2_4_11_ami(self):
+        self._test_create_main_bootstrap_script(
             image_version='2.4.11',
             expected_python_bin=('python2.7' if PY2 else PYTHON_BIN))
 
@@ -1514,9 +1514,9 @@ class MasterBootstrapScriptTestCase(MockBoto3TestCase):
                               pool_clusters=False)
 
         runner._add_bootstrap_files_for_upload()
-        self.assertIsNone(runner._master_bootstrap_script_path)
+        self.assertIsNone(runner._main_bootstrap_script_path)
 
-        # bootstrap actions don't figure into the master bootstrap script
+        # bootstrap actions don't figure into the main bootstrap script
         runner = EMRJobRunner(conf_paths=[],
                               bootstrap_mrjob=False,
                               bootstrap_actions=['foo', 'bar baz'],
@@ -1524,7 +1524,7 @@ class MasterBootstrapScriptTestCase(MockBoto3TestCase):
                               pool_clusters=False)
 
         runner._add_bootstrap_files_for_upload()
-        self.assertIsNone(runner._master_bootstrap_script_path)
+        self.assertIsNone(runner._main_bootstrap_script_path)
 
     def test_pooling_does_not_require_bootstrap_script(self):
         # now we use tags for this (see #1086)
@@ -1534,7 +1534,7 @@ class MasterBootstrapScriptTestCase(MockBoto3TestCase):
                               pool_clusters=True)
 
         runner._add_bootstrap_files_for_upload()
-        self.assertIsNone(runner._master_bootstrap_script_path)
+        self.assertIsNone(runner._main_bootstrap_script_path)
 
     def test_bootstrap_actions_get_added(self):
         bootstrap_actions = [
@@ -1565,11 +1565,11 @@ class MasterBootstrapScriptTestCase(MockBoto3TestCase):
         self.assertEqual(actions[1]['Args'], [])
         self.assertEqual(actions[1]['Name'], 'action 1')
 
-        # check for master bootstrap script
+        # check for main bootstrap script
         self.assertTrue(actions[2]['ScriptPath'].startswith('s3://mrjob-'))
         self.assertTrue(actions[2]['ScriptPath'].endswith('b.sh'))
         self.assertEqual(actions[2]['Args'], [])
-        self.assertEqual(actions[2]['Name'], 'master')
+        self.assertEqual(actions[2]['Name'], 'main')
 
         # check for idle timeout script
         self.assertTrue(actions[3]['ScriptPath'].startswith('s3://mrjob-'))
@@ -1578,7 +1578,7 @@ class MasterBootstrapScriptTestCase(MockBoto3TestCase):
         self.assertEqual(actions[3]['Args'], ['1800', '300'])
         self.assertEqual(actions[3]['Name'], 'idle timeout')
 
-        # make sure master bootstrap script is on S3
+        # make sure main bootstrap script is on S3
         self.assertTrue(runner.fs.exists(actions[2]['ScriptPath']))
 
     def test_bootstrap_mrjob_uses_python_bin(self):
@@ -1588,8 +1588,8 @@ class MasterBootstrapScriptTestCase(MockBoto3TestCase):
                               python_bin=['anaconda'])
 
         runner._add_bootstrap_files_for_upload()
-        self.assertIsNotNone(runner._master_bootstrap_script_path)
-        with open(runner._master_bootstrap_script_path, 'r') as f:
+        self.assertIsNotNone(runner._main_bootstrap_script_path)
+        with open(runner._main_bootstrap_script_path, 'r') as f:
             content = f.read()
 
         self.assertIn('sudo anaconda -m compileall -q -f', content)
@@ -1620,11 +1620,11 @@ class MasterBootstrapScriptTestCase(MockBoto3TestCase):
         self.assertEqual(actions[0]['Args'][0], 'python-scipy')
         self.assertEqual(actions[0]['Args'][1], 'mysql-server')
 
-        # check for master bootstrap script
+        # check for main bootstrap script
         self.assertTrue(actions[1]['ScriptPath'].startswith('s3://mrjob-'))
         self.assertTrue(actions[1]['ScriptPath'].endswith('b.sh'))
         self.assertEqual(actions[1]['Args'], [])
-        self.assertEqual(actions[1]['Name'], 'master')
+        self.assertEqual(actions[1]['Name'], 'main')
 
         # check for idle timeout script
         self.assertTrue(actions[2]['ScriptPath'].startswith('s3://mrjob-'))
@@ -1647,10 +1647,10 @@ class MasterBootstrapScriptTestCase(MockBoto3TestCase):
 
         runner._add_bootstrap_files_for_upload()
 
-        self.assertIsNotNone(runner._master_bootstrap_script_path)
-        self.assertTrue(os.path.exists(runner._master_bootstrap_script_path))
+        self.assertIsNotNone(runner._main_bootstrap_script_path)
+        self.assertTrue(os.path.exists(runner._main_bootstrap_script_path))
 
-        with open(runner._master_bootstrap_script_path) as f:
+        with open(runner._main_bootstrap_script_path) as f:
             lines = [line.rstrip() for line in f]
 
         self.assertIn('  __mrjob_TMP=$(mktemp -d)', lines)
@@ -1680,12 +1680,12 @@ class MasterBootstrapScriptTestCase(MockBoto3TestCase):
 
         runner._add_bootstrap_files_for_upload()
 
-        self.assertIsNotNone(runner._master_bootstrap_script_path)
-        self.assertTrue(os.path.exists(runner._master_bootstrap_script_path))
+        self.assertIsNotNone(runner._main_bootstrap_script_path)
+        self.assertTrue(os.path.exists(runner._main_bootstrap_script_path))
 
         self.assertIn(foo_dir, runner._dir_to_archive_path)
 
-        with open(runner._master_bootstrap_script_path) as f:
+        with open(runner._main_bootstrap_script_path) as f:
             lines = [line.rstrip() for line in f]
 
         self.assertIn('  __mrjob_TMP=$(mktemp -d)', lines)
@@ -1709,18 +1709,18 @@ class MasterBootstrapScriptTestCase(MockBoto3TestCase):
             lines)
 
 
-class MasterNodeSetupScriptTestCase(MockBoto3TestCase):
+class MainNodeSetupScriptTestCase(MockBoto3TestCase):
 
     def setUp(self):
-        super(MasterNodeSetupScriptTestCase, self).setUp()
+        super(MainNodeSetupScriptTestCase, self).setUp()
         self.start(patch('mrjob.emr.log'))
 
     def test_no_script_needed(self):
         runner = EMRJobRunner()
 
-        runner._add_master_node_setup_files_for_upload()
-        self.assertIsNone(runner._master_node_setup_script_path)
-        self.assertEqual(runner._master_node_setup_mgr.paths(), set())
+        runner._add_main_node_setup_files_for_upload()
+        self.assertIsNone(runner._main_node_setup_script_path)
+        self.assertEqual(runner._main_node_setup_mgr.paths(), set())
 
     def test_libjars(self):
         runner = EMRJobRunner(libjars=[
@@ -1729,17 +1729,17 @@ class MasterNodeSetupScriptTestCase(MockBoto3TestCase):
             'file:///left/dora.jar',
         ])
 
-        runner._add_master_node_setup_files_for_upload()
-        self.assertIsNotNone(runner._master_node_setup_script_path)
+        runner._add_main_node_setup_files_for_upload()
+        self.assertIsNotNone(runner._main_node_setup_script_path)
         # don't need to manage file:/// URI
         self.assertEqual(
-            runner._master_node_setup_mgr.paths(),
+            runner._main_node_setup_mgr.paths(),
             set(['cookie.jar', 's3://pooh/honey.jar']))
 
         uploaded_paths = set(runner._upload_mgr.path_to_uri())
         self.assertIn('cookie.jar', uploaded_paths)
 
-        with open(runner._master_node_setup_script_path, 'rb') as f:
+        with open(runner._main_node_setup_script_path, 'rb') as f:
             contents = f.read()
 
         self.assertTrue(contents.startswith(b'#!/bin/sh -x\n'))
@@ -1755,10 +1755,10 @@ class MasterNodeSetupScriptTestCase(MockBoto3TestCase):
         runner = EMRJobRunner(libjars=['cookie.jar'],
                               image_version='3.11.0')
 
-        runner._add_master_node_setup_files_for_upload()
-        self.assertIsNotNone(runner._master_node_setup_script_path)
+        runner._add_main_node_setup_files_for_upload()
+        self.assertIsNotNone(runner._main_node_setup_script_path)
 
-        with open(runner._master_node_setup_script_path, 'rb') as f:
+        with open(runner._main_node_setup_script_path, 'rb') as f:
             contents = f.read()
 
         self.assertIn(b'hadoop fs -copyToLocal ', contents)
@@ -1769,10 +1769,10 @@ class MasterNodeSetupScriptTestCase(MockBoto3TestCase):
         runner = EMRJobRunner(libjars=['cookie.jar'],
                               sh_bin=['bash'])
 
-        runner._add_master_node_setup_files_for_upload()
-        self.assertIsNotNone(runner._master_node_setup_script_path)
+        runner._add_main_node_setup_files_for_upload()
+        self.assertIsNotNone(runner._main_node_setup_script_path)
 
-        with open(runner._master_node_setup_script_path, 'rb') as f:
+        with open(runner._main_node_setup_script_path, 'rb') as f:
             contents = f.read()
 
         self.assertTrue(contents.startswith(b'#!/usr/bin/env bash\n'))
@@ -1909,14 +1909,14 @@ class TestCatFallback(MockBoto3TestCase):
     def test_ssh_cat(self):
         runner = EMRJobRunner(conf_paths=[])
         self.prepare_runner_for_ssh(runner)
-        mock_ssh_file('testmaster', 'etc/init.d', b'meow')
+        mock_ssh_file('testmain', 'etc/init.d', b'meow')
 
         ssh_cat_gen = runner.fs.cat(
-            'ssh://testmaster/etc/init.d')
+            'ssh://testmain/etc/init.d')
         self.assertEqual(list(ssh_cat_gen)[0].rstrip(), b'meow')
         self.assertRaises(
             IOError, list,
-            runner.fs.cat('ssh://testmaster/does_not_exist'))
+            runner.fs.cat('ssh://testmain/does_not_exist'))
 
     def test_ssh_cat_errlog(self):
         # A file *containing* an error message shouldn't cause an error.
@@ -1924,9 +1924,9 @@ class TestCatFallback(MockBoto3TestCase):
         self.prepare_runner_for_ssh(runner)
 
         error_message = b'cat: logs/err.log: No such file or directory\n'
-        mock_ssh_file('testmaster', 'logs/err.log', error_message)
+        mock_ssh_file('testmain', 'logs/err.log', error_message)
         self.assertEqual(
-            list(runner.fs.cat('ssh://testmaster/logs/err.log')),
+            list(runner.fs.cat('ssh://testmain/logs/err.log')),
             [error_message])
 
 
@@ -2143,7 +2143,7 @@ class BuildStreamingStepTestCase(MockBoto3TestCase):
         runner._steps = steps
 
         runner._add_job_files_for_upload()
-        runner._add_master_node_setup_files_for_upload()
+        runner._add_main_node_setup_files_for_upload()
 
         return runner
 
@@ -2287,7 +2287,7 @@ class LibjarPathsTestCase(MockBoto3TestCase):
 
     def test_no_libjars(self):
         runner = EMRJobRunner()
-        runner._add_master_node_setup_files_for_upload()
+        runner._add_main_node_setup_files_for_upload()
 
         self.assertEqual(runner._libjar_paths(), [])
 
@@ -2297,9 +2297,9 @@ class LibjarPathsTestCase(MockBoto3TestCase):
             's3://pooh/honey.jar',
             'file:///left/dora.jar',
         ])
-        runner._add_master_node_setup_files_for_upload()
+        runner._add_main_node_setup_files_for_upload()
 
-        working_dir = runner._master_node_setup_working_dir()
+        working_dir = runner._main_node_setup_working_dir()
 
         self.assertEqual(
             runner._libjar_paths(),
@@ -2444,13 +2444,13 @@ class JarStepTestCase(MockBoto3TestCase):
 
             steps = _list_all_steps(runner)
 
-            self.assertEqual(len(steps), 2)  # adds master node setup
+            self.assertEqual(len(steps), 2)  # adds main node setup
 
             jar_step = steps[1]
             self.assertEqual(jar_step['Config']['Jar'], jar_uri)
             step_args = jar_step['Config']['Args']
 
-            working_dir = runner._master_node_setup_working_dir()
+            working_dir = runner._main_node_setup_working_dir()
 
             self.assertEqual(step_args,
                              ['-libjars', working_dir + '/libfake.jar'])
@@ -2755,23 +2755,23 @@ class SparkScriptStepTestCase(MockBoto3TestCase):
             )
 
 
-class BuildMasterNodeSetupStepTestCase(MockBoto3TestCase):
+class BuildMainNodeSetupStepTestCase(MockBoto3TestCase):
 
-    def test_build_master_node_setup_step(self):
+    def test_build_main_node_setup_step(self):
         runner = EMRJobRunner(libjars=['cookie.jar'])
-        runner._add_master_node_setup_files_for_upload()
+        runner._add_main_node_setup_files_for_upload()
 
-        self.assertIsNotNone(runner._master_node_setup_script_path)
-        master_node_setup_uri = runner._upload_mgr.uri(
-            runner._master_node_setup_script_path)
+        self.assertIsNotNone(runner._main_node_setup_script_path)
+        main_node_setup_uri = runner._upload_mgr.uri(
+            runner._main_node_setup_script_path)
 
-        step = runner._build_master_node_setup_step()
+        step = runner._build_main_node_setup_step()
 
-        self.assertTrue(step['Name'].endswith(': Master node setup'))
+        self.assertTrue(step['Name'].endswith(': Main node setup'))
         self.assertEqual(step['HadoopJarStep']['Jar'],
                          runner._script_runner_jar_uri())
         self.assertEqual(step['HadoopJarStep']['Args'],
-                         [master_node_setup_uri])
+                         [main_node_setup_uri])
         self.assertEqual(step['ActionOnFailure'],
                          runner._action_on_failure())
 
@@ -3401,9 +3401,9 @@ class StreamLogDirsTestCase(MockBoto3TestCase):
 
         self.log = self.start(patch('mrjob.emr.log'))
 
-        self._address_of_master = self.start(patch(
-            'mrjob.emr.EMRJobRunner._address_of_master',
-            return_value='master'))
+        self._address_of_main = self.start(patch(
+            'mrjob.emr.EMRJobRunner._address_of_main',
+            return_value='main'))
 
         self.get_image_version = self.start(patch(
             'mrjob.emr.EMRJobRunner.get_image_version',
@@ -3480,13 +3480,13 @@ class StreamLogDirsTestCase(MockBoto3TestCase):
             self.log.info.reset_mock()
 
             self.assertEqual(next(results), [
-                'ssh://master/mnt/var/log/' + expected_dir_name,
+                'ssh://main/mnt/var/log/' + expected_dir_name,
             ])
             self.assertFalse(
                 self._wait_for_logs_on_s3.called)
             self.log.info.assert_called_once_with(
                 'Looking for history log in /mnt/var/log/' +
-                expected_dir_name + ' on master...')
+                expected_dir_name + ' on main...')
 
         self.log.info.reset_mock()
 
@@ -3536,13 +3536,13 @@ class StreamLogDirsTestCase(MockBoto3TestCase):
             self.log.info.reset_mock()
 
             self.assertEqual(next(results), [
-                'ssh://master/mnt/var/log/hadoop/steps/s-STEPID',
+                'ssh://main/mnt/var/log/hadoop/steps/s-STEPID',
             ])
             self.assertFalse(
                 self._wait_for_logs_on_s3.called)
             self.log.info.assert_called_once_with(
                 'Looking for step log in /mnt/var/log/hadoop/steps/s-STEPID'
-                ' on master...')
+                ' on main...')
 
         self.log.info.reset_mock()
 
@@ -3585,15 +3585,15 @@ class StreamLogDirsTestCase(MockBoto3TestCase):
                 local_path = posixpath.join(local_path, application_id)
 
             self.assertEqual(next(results), [
-                'ssh://master/mnt/var/log/' + expected_dir_name,
-                'ssh://master!core1/mnt/var/log/' + expected_dir_name,
-                'ssh://master!core2/mnt/var/log/' + expected_dir_name,
-                'ssh://master!task1/mnt/var/log/' + expected_dir_name,
+                'ssh://main/mnt/var/log/' + expected_dir_name,
+                'ssh://main!core1/mnt/var/log/' + expected_dir_name,
+                'ssh://main!core2/mnt/var/log/' + expected_dir_name,
+                'ssh://main!task1/mnt/var/log/' + expected_dir_name,
             ])
             self.assertFalse(self.log.warning.called)
             self.log.info.assert_called_once_with(
                 'Looking for task logs in /mnt/var/log/' +
-                expected_dir_name + ' on master and task/core nodes...')
+                expected_dir_name + ' on main and task/core nodes...')
 
             self.assertFalse(
                 self._wait_for_logs_on_s3.called)
@@ -4136,19 +4136,19 @@ class WaitForStepsToCompleteTestCase(MockBoto3TestCase):
         self.assertEqual(len(runner._log_interpretations), 2)
         self.assertIsNone(runner._mns_log_interpretation)
 
-    def test_master_node_setup(self):
+    def test_main_node_setup(self):
         fake_jar = os.path.join(self.tmp_dir, 'fake.jar')
         with open(fake_jar, 'w'):
             pass
 
-        # --libjar is currently the only way to create the master
+        # --libjar is currently the only way to create the main
         # node setup script
         runner = self.make_runner('--libjar', fake_jar)
 
-        runner._add_master_node_setup_files_for_upload()
+        runner._add_main_node_setup_files_for_upload()
         runner._wait_for_steps_to_complete()
 
-        self.assertIsNotNone(runner._master_node_setup_script_path)
+        self.assertIsNotNone(runner._main_node_setup_script_path)
 
         self.assertEqual(EMRJobRunner._wait_for_step_to_complete.call_count, 3)
         self.assertTrue(EMRJobRunner._set_up_ssh_tunnel.called)
@@ -4196,7 +4196,7 @@ class WaitForStepsToCompleteTestCase(MockBoto3TestCase):
         runner = self.make_runner()
         mock_cluster = self.mock_emr_clusters[runner._cluster_id]
         mock_cluster['Status']['State'] = 'RUNNING'
-        mock_cluster['MasterPublicDnsName'] = 'mockmaster'
+        mock_cluster['MainPublicDnsName'] = 'mockmain'
 
         # run until SSH tunnel is set up
         self.assertRaises(self.StopTest, runner._wait_for_steps_to_complete)
@@ -4212,7 +4212,7 @@ class WaitForStepsToCompleteTestCase(MockBoto3TestCase):
         runner = self.make_runner()
         mock_cluster = self.mock_emr_clusters[runner._cluster_id]
         mock_cluster['Status']['State'] = 'WAITING'
-        mock_cluster['MasterPublicDnsName'] = 'mockmaster'
+        mock_cluster['MainPublicDnsName'] = 'mockmain'
 
         # run until SSH tunnel is set up
         self.assertRaises(self.StopTest, runner._wait_for_steps_to_complete)
@@ -4453,24 +4453,24 @@ class UseSudoOverSshTestCase(MockBoto3TestCase):
             self.assertIsNone(runner._ssh_fs)
 
 
-class MasterPrivateIPTestCase(MockBoto3TestCase):
+class MainPrivateIPTestCase(MockBoto3TestCase):
 
-    # logic for runner._master_private_ip()
+    # logic for runner._main_private_ip()
 
-    def test_master_private_ip(self):
+    def test_main_private_ip(self):
         job = MRTwoStepJob(['-r', 'emr'])
         job.sandbox()
 
         with job.make_runner() as runner:
             # no cluster yet
-            self.assertRaises(AssertionError, runner._master_private_ip)
+            self.assertRaises(AssertionError, runner._main_private_ip)
 
             runner._launch()
 
-            self.assertIsNone(runner._master_private_ip())
+            self.assertIsNone(runner._main_private_ip())
 
             self.simulate_emr_progress(runner.get_cluster_id())
-            self.assertIsNotNone(runner._master_private_ip())
+            self.assertIsNotNone(runner._main_private_ip())
 
 
 class SetUpSSHTunnelTestCase(MockBoto3TestCase):
@@ -4838,7 +4838,7 @@ class TestClusterSparkSupportWarning(MockBoto3TestCase):
             else:
                 self.assertIn('4.0.0', message)
 
-    def test_master_instance_too_small(self):
+    def test_main_instance_too_small(self):
         job = MRNullSpark(['-r', 'emr', '--image-version', '4.0.0',
                            '--num-core-instances', '2',
                            '--core-instance-type', 'm1.medium'])
@@ -4882,9 +4882,9 @@ class TestClusterSparkSupportWarning(MockBoto3TestCase):
             self.assertIn('too small', message)
             self.assertIn('stall', message)
 
-    def test_sole_master_instance_too_small(self):
+    def test_sole_main_instance_too_small(self):
         job = MRNullSpark(['-r', 'emr', '--image-version', '4.0.0',
-                           '--master-instance-type', 'm1.medium'])
+                           '--main-instance-type', 'm1.medium'])
         job.sandbox()
 
         with job.make_runner() as runner:
@@ -4895,10 +4895,10 @@ class TestClusterSparkSupportWarning(MockBoto3TestCase):
             self.assertIn('too small', message)
             self.assertIn('stall', message)
 
-    def test_okay_with_core_instances_and_small_master(self):
+    def test_okay_with_core_instances_and_small_main(self):
         job = MRNullSpark(['-r', 'emr', '--image-version', '4.0.0',
                            '--num-core-instances', '2',
-                           '--master-instance-type', 'm1.medium'])
+                           '--main-instance-type', 'm1.medium'])
         job.sandbox()
 
         with job.make_runner() as runner:
@@ -4923,7 +4923,7 @@ class TestClusterSparkSupportWarning(MockBoto3TestCase):
             message = runner._cluster_spark_support_warning()
             self.assertIsNone(message)
 
-    def test_instance_fleet_sole_master_too_small(self):
+    def test_instance_fleet_sole_main_too_small(self):
         instance_fleets = [dict(
             InstanceFleetType='MASTER',
             InstanceTypeConfigs=[dict(InstanceType='m1.medium')],
@@ -4989,7 +4989,7 @@ class TestClusterSparkSupportWarning(MockBoto3TestCase):
             self.assertIn('too small', message)
             self.assertIn('stall', message)
 
-    def test_instance_fleet_okay_with_core_instances_and_small_master(self):
+    def test_instance_fleet_okay_with_core_instances_and_small_main(self):
         instance_fleets = [
             dict(
                 InstanceFleetType='MASTER',
@@ -5050,7 +5050,7 @@ class SparkSubmitArgPrefixTestCase(MockBoto3TestCase):
 
         self.assertEqual(
             runner._spark_submit_arg_prefix(),
-            ['--master', 'yarn', '--deploy-mode', 'cluster'])
+            ['--main', 'yarn', '--deploy-mode', 'cluster'])
 
 
 class SSHWorkerHostsTestCase(MockBoto3TestCase):
@@ -5064,7 +5064,7 @@ class SSHWorkerHostsTestCase(MockBoto3TestCase):
 
             return runner._ssh_worker_hosts()
 
-    def test_ignore_master(self):
+    def test_ignore_main(self):
         self.assertEqual(len(self._ssh_worker_hosts()), 0)
 
     def test_include_core_nodes(self):
@@ -5111,8 +5111,8 @@ class BadBashWorkaroundTestCase(MockBoto3TestCase):
             self.assertEqual(runner._sh_bin(), expected_bin)
             self.assertEqual(runner._sh_pre_commands(), expected_pre_commands)
 
-            check_script(runner._master_bootstrap_script_path)
-            check_script(runner._master_node_setup_script_path)
+            check_script(runner._main_bootstrap_script_path)
+            check_script(runner._main_node_setup_script_path)
 
     def test_good_bash(self):
         self._test_sh_bin('5.0.0', ['/bin/sh', '-ex'], [])
@@ -5276,7 +5276,7 @@ class ProgressHtmlFromTunnelTestCase(MockBoto3TestCase):
 
 class ProgressHtmlOverSshTestCase(MockBoto3TestCase):
 
-    MOCK_MASTER = 'mockmaster'
+    MOCK_MASTER = 'mockmain'
     MOCK_JOB_TRACKER_URL = 'http://1.2.3.4:8088/cluster'
 
     MOCK_EC2_KEY_PAIR_FILE = 'mock.pem'
@@ -5287,8 +5287,8 @@ class ProgressHtmlOverSshTestCase(MockBoto3TestCase):
         self._ssh_run = self.start(patch('mrjob.fs.ssh.SSHFilesystem._ssh_run',
                                          return_value=(Mock(), Mock())))
 
-        self._address_of_master = self.start(patch(
-            'mrjob.emr.EMRJobRunner._address_of_master',
+        self._address_of_main = self.start(patch(
+            'mrjob.emr.EMRJobRunner._address_of_main',
             return_value=self.MOCK_MASTER))
 
         self._job_tracker_url = self.start(patch(
@@ -5315,8 +5315,8 @@ class ProgressHtmlOverSshTestCase(MockBoto3TestCase):
 
         self.assertEqual(html, self._ssh_run.return_value[0])
 
-    def test_no_master_node(self):
-        self._address_of_master.return_value = None
+    def test_no_main_node(self):
+        self._address_of_main.return_value = None
 
         self.assertIsNone(self._launch_and_get_progress_html())
 

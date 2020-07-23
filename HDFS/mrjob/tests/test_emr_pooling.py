@@ -80,7 +80,7 @@ class PoolMatchingTestCase(MockBoto3TestCase):
         mock_cluster['Status']['State'] = 'WAITING'
         mock_cluster['Status']['Timeline']['CreationDateTime'] = (
             _boto3_now() - timedelta(minutes=minutes_ago))
-        mock_cluster['MasterPublicDnsName'] = 'mockmaster'
+        mock_cluster['MainPublicDnsName'] = 'mockmain'
 
         # instance fleets cares about provisioned instances
         if provision:
@@ -510,47 +510,47 @@ class PoolMatchingTestCase(MockBoto3TestCase):
             '--instance-type', 'm2.4xlarge',
             '--num-core-instances', '2'])
 
-    def test_master_instance_has_to_be_big_enough(self):
+    def test_main_instance_has_to_be_big_enough(self):
         _, cluster_id = self.make_pooled_cluster(
             instance_type='c1.xlarge',
             num_core_instances=10)
 
         # We implicitly want a MASTER instance with c1.xlarge. The pooled
-        # cluster has an m1.medium master instance and 9 c1.xlarge core
+        # cluster has an m1.medium main instance and 9 c1.xlarge core
         # instances, which doesn't match.
         self.assertDoesNotJoin(cluster_id, [
             '-r', 'emr', '-v', '--pool-clusters',
             '--instance-type', 'c1.xlarge'])
 
-    # tests of what happens when user specifies a single master and
+    # tests of what happens when user specifies a single main and
     # pooling tries to join clusters with core and/or task instances
 
-    def test_master_alone_joins_master_and_core(self):
+    def test_main_alone_joins_main_and_core(self):
         _, cluster_id = self.make_pooled_cluster(
             num_core_instances=2)
 
         self.assertJoins(cluster_id, [
             '-r', 'emr', '-v', '--pool-clusters'])
 
-    def test_master_alone_requires_big_enough_core_instances(self):
+    def test_main_alone_requires_big_enough_core_instances(self):
         _, cluster_id = self.make_pooled_cluster(
-            master_instance_type='c1.xlarge',
+            main_instance_type='c1.xlarge',
             num_core_instances=2)  # core instances are c1.medium
 
         self.assertDoesNotJoin(cluster_id, [
             '-r', 'emr', '-v', '--pool-clusters',
-            '--master-instance-type', 'c1.xlarge'])
+            '--main-instance-type', 'c1.xlarge'])
 
-    def test_master_alone_requires_big_enough_master_when_with_core(self):
+    def test_main_alone_requires_big_enough_main_when_with_core(self):
         _, cluster_id = self.make_pooled_cluster(
             core_instance_type='c1.xlarge',
-            num_core_instances=2)  # master instances are c1.medium
+            num_core_instances=2)  # main instances are c1.medium
 
         self.assertDoesNotJoin(cluster_id, [
             '-r', 'emr', '-v', '--pool-clusters',
-            '--master-instance-type', 'c1.xlarge'])
+            '--main-instance-type', 'c1.xlarge'])
 
-    def test_master_alone_accepts_master_core_task(self):
+    def test_main_alone_accepts_main_core_task(self):
         _, cluster_id = self.make_pooled_cluster(
             num_core_instances=2,
             num_task_instances=2)
@@ -558,9 +558,9 @@ class PoolMatchingTestCase(MockBoto3TestCase):
         self.assertJoins(cluster_id, [
             '-r', 'emr', '-v', '--pool-clusters'])
 
-    def test_master_alone_does_not_accept_too_small_task_instances(self):
+    def test_main_alone_does_not_accept_too_small_task_instances(self):
         _, cluster_id = self.make_pooled_cluster(
-            master_instance_type='c1.xlarge',
+            main_instance_type='c1.xlarge',
             core_instance_type='c1.xlarge',
             task_instance_type='m1.medium',
             num_core_instances=2,
@@ -568,7 +568,7 @@ class PoolMatchingTestCase(MockBoto3TestCase):
 
         self.assertDoesNotJoin(cluster_id, [
                 '-r', 'emr', '-v', '--pool-clusters',
-                '--master-instance-type', 'c1.xlarge'])
+                '--main-instance-type', 'c1.xlarge'])
 
     def test_accept_extra_task_instances(self):
         _, cluster_id = self.make_pooled_cluster(
@@ -926,39 +926,39 @@ class PoolMatchingTestCase(MockBoto3TestCase):
 
     def test_can_join_cluster_with_same_bid_price(self):
         _, cluster_id = self.make_pooled_cluster(
-            master_instance_bid_price='0.25')
+            main_instance_bid_price='0.25')
 
         self.assertJoins(cluster_id, [
             '-r', 'emr', '-v', '--pool-clusters',
-            '--master-instance-bid-price', '0.25'])
+            '--main-instance-bid-price', '0.25'])
 
     def test_can_join_cluster_with_higher_bid_price(self):
         _, cluster_id = self.make_pooled_cluster(
-            master_instance_bid_price='25.00')
+            main_instance_bid_price='25.00')
 
         self.assertJoins(cluster_id, [
             '-r', 'emr', '-v', '--pool-clusters',
-            '--master-instance-bid-price', '0.25'])
+            '--main-instance-bid-price', '0.25'])
 
     def test_cant_join_cluster_with_lower_bid_price(self):
         _, cluster_id = self.make_pooled_cluster(
-            master_instance_bid_price='0.25',
+            main_instance_bid_price='0.25',
             num_core_instances=100)
 
         self.assertDoesNotJoin(cluster_id, [
             '-r', 'emr', '-v', '--pool-clusters',
-            '--master-instance-bid-price', '25.00'])
+            '--main-instance-bid-price', '25.00'])
 
     def test_on_demand_satisfies_any_bid_price(self):
         _, cluster_id = self.make_pooled_cluster()
 
         self.assertJoins(cluster_id, [
             '-r', 'emr', '-v', '--pool-clusters',
-            '--master-instance-bid-price', '25.00'])
+            '--main-instance-bid-price', '25.00'])
 
     def test_no_bid_price_satisfies_on_demand(self):
         _, cluster_id = self.make_pooled_cluster(
-            master_instance_bid_price='25.00')
+            main_instance_bid_price='25.00')
 
         self.assertDoesNotJoin(cluster_id, [
             '-r', 'emr', '-v', '--pool-clusters'])
@@ -977,7 +977,7 @@ class PoolMatchingTestCase(MockBoto3TestCase):
             '--num-core-instances', '2',
             '--num-task-instances', '10',  # more instances, but smaller
             '--core-instance-bid-price', '0.10',
-            '--master-instance-bid-price', '77.77',
+            '--main-instance-bid-price', '77.77',
             '--task-instance-bid-price', '22.00'])
 
     def _fleet_config(
@@ -1045,7 +1045,7 @@ class PoolMatchingTestCase(MockBoto3TestCase):
         fleets = [self._fleet_config(instance_types=['m1.medium', 'm1.large'])]
 
         _, cluster_id = self.make_pooled_cluster(
-            master_instance_type='m1.large')
+            main_instance_type='m1.large')
 
         self.assertDoesNotJoin(cluster_id, [
             '-r', 'emr', '-v', '--pool-clusters',
@@ -1521,7 +1521,7 @@ class PoolMatchingTestCase(MockBoto3TestCase):
             '-r', 'emr', '-v', '--pool-clusters', '--image-version', '2.4.7'],
             job_class=MRWordCount)
 
-    def test_no_space_for_master_node_setup(self):
+    def test_no_space_for_main_node_setup(self):
         dummy_runner, cluster_id = self.make_pooled_cluster()
 
         # fill the cluster
@@ -1543,7 +1543,7 @@ class PoolMatchingTestCase(MockBoto3TestCase):
             '--libjar', 's3:///poohs-house/HUNNY.jar'],
             job_class=MRWordCount)
 
-    def test_bearly_space_for_master_node_setup(self):
+    def test_bearly_space_for_main_node_setup(self):
         dummy_runner, cluster_id = self.make_pooled_cluster()
 
         # fill the cluster
@@ -1900,7 +1900,7 @@ class PoolingRecoveryTestCase(MockBoto3TestCase):
         # simulate that instances are provisioned
         mock_cluster = self.mock_emr_clusters[cluster_id]
         mock_cluster['Status']['State'] = 'WAITING'
-        mock_cluster['MasterPublicDnsName'] = 'mockmaster'
+        mock_cluster['MainPublicDnsName'] = 'mockmain'
         for ig in mock_cluster['_InstanceGroups']:
             ig['RunningInstanceCount'] = ig['RequestedInstanceCount']
 
@@ -2079,12 +2079,12 @@ class PoolingRecoveryTestCase(MockBoto3TestCase):
             runner._launch()
 
             self.assertEqual(runner.get_cluster_id(), cluster_id)
-            addr = runner._address_of_master()
+            addr = runner._address_of_main()
 
             runner._finish_run()
 
             self.assertNotEqual(runner.get_cluster_id(), cluster_id)
-            self.assertNotEqual(runner._address_of_master(), addr)
+            self.assertNotEqual(runner._address_of_main(), addr)
 
 
 class PoolingDisablingTestCase(MockBoto3TestCase):

@@ -281,7 +281,7 @@ class ExistingClusterTestCase(MockGoogleAPITestCase):
 
             # Issue 182: don't create the bootstrap script when
             # attaching to another cluster
-            self.assertIsNone(runner._master_bootstrap_script_path)
+            self.assertIsNone(runner._main_bootstrap_script_path)
 
             results.extend(mr_job.parse_output(runner.cat_output()))
 
@@ -377,7 +377,7 @@ class ZoneTestCase(MockGoogleAPITestCase):
             self.assertIn(EXPECTED_ZONE,
                           cluster['config']['gceClusterConfig']['zoneUri'])
             self.assertIn(EXPECTED_ZONE,
-                          cluster['config']['masterConfig']['machineTypeUri'])
+                          cluster['config']['mainConfig']['machineTypeUri'])
             self.assertIn(EXPECTED_ZONE,
                           cluster['config']['workerConfig']['machineTypeUri'])
 
@@ -516,7 +516,7 @@ class GCEInstanceGroupTestCase(MockGoogleAPITestCase):
 
         # cluster_body = runner.api_client.cluster_create()
         fake_bootstrap_script = 'gs://fake-bucket/fake-script.sh'
-        runner._master_bootstrap_script_path = fake_bootstrap_script
+        runner._main_bootstrap_script_path = fake_bootstrap_script
         runner._upload_mgr.add(fake_bootstrap_script)
         runner._upload_mgr.add(_MAX_HOURS_IDLE_BOOTSTRAP_ACTION_PATH)
 
@@ -527,14 +527,14 @@ class GCEInstanceGroupTestCase(MockGoogleAPITestCase):
         conf = cluster_body['config']
 
         role_to_actual = dict(
-            master=self._gce_instance_group_summary(conf['masterConfig']),
+            main=self._gce_instance_group_summary(conf['mainConfig']),
             core=self._gce_instance_group_summary(conf['workerConfig']),
             task=self._gce_instance_group_summary(
                 conf.get('secondaryWorkerConfig'))
         )
 
         role_to_expected = kwargs.copy()
-        role_to_expected.setdefault('master', (1, DEFAULT_GCE_INSTANCE))
+        role_to_expected.setdefault('main', (1, DEFAULT_GCE_INSTANCE))
         role_to_expected.setdefault('core', (2, DEFAULT_GCE_INSTANCE))
         role_to_expected.setdefault(
             'task', self._gce_instance_group_summary(dict()))
@@ -550,57 +550,57 @@ class GCEInstanceGroupTestCase(MockGoogleAPITestCase):
     def test_defaults(self):
         self._test_instance_groups(
             {},
-            master=(1, DEFAULT_GCE_INSTANCE))
+            main=(1, DEFAULT_GCE_INSTANCE))
 
         self._test_instance_groups(
             {'num_core_instances': 2},
             core=(2, DEFAULT_GCE_INSTANCE),
-            master=(1, DEFAULT_GCE_INSTANCE))
+            main=(1, DEFAULT_GCE_INSTANCE))
 
     def test_multiple_instances(self):
         self._test_instance_groups(
             {'instance_type': HIGHCPU_GCE_INSTANCE, 'num_core_instances': 5},
             core=(5, HIGHCPU_GCE_INSTANCE),
-            master=(1, DEFAULT_GCE_INSTANCE))
+            main=(1, DEFAULT_GCE_INSTANCE))
 
-    def test_explicit_master_and_worker_instance_types(self):
+    def test_explicit_main_and_worker_instance_types(self):
         self._test_instance_groups(
-            {'master_instance_type': MICRO_GCE_INSTANCE},
-            master=(1, MICRO_GCE_INSTANCE))
+            {'main_instance_type': MICRO_GCE_INSTANCE},
+            main=(1, MICRO_GCE_INSTANCE))
 
         self._test_instance_groups(
             {'instance_type': HIGHMEM_GCE_INSTANCE,
              'num_core_instances': 2},
             core=(2, HIGHMEM_GCE_INSTANCE),
-            master=(1, DEFAULT_GCE_INSTANCE))
+            main=(1, DEFAULT_GCE_INSTANCE))
 
         self._test_instance_groups(
-            {'master_instance_type': MICRO_GCE_INSTANCE,
+            {'main_instance_type': MICRO_GCE_INSTANCE,
              'instance_type': HIGHMEM_GCE_INSTANCE,
              'num_core_instances': 2},
             core=(2, HIGHMEM_GCE_INSTANCE),
-            master=(1, MICRO_GCE_INSTANCE))
+            main=(1, MICRO_GCE_INSTANCE))
 
     def test_explicit_instance_types_take_precedence(self):
         self._test_instance_groups(
             {'instance_type': HIGHCPU_GCE_INSTANCE,
-             'master_instance_type': MICRO_GCE_INSTANCE},
-            master=(1, MICRO_GCE_INSTANCE),
+             'main_instance_type': MICRO_GCE_INSTANCE},
+            main=(1, MICRO_GCE_INSTANCE),
             core=(2, HIGHCPU_GCE_INSTANCE)
         )
 
     def test_cmd_line_opts_beat_mrjob_conf(self):
         # set instance_type in mrjob.conf, 1 instance
-        self.set_in_mrjob_conf(master_instance_type=HIGHCPU_GCE_INSTANCE)
+        self.set_in_mrjob_conf(main_instance_type=HIGHCPU_GCE_INSTANCE)
 
         self._test_instance_groups(
             {},
-            master=(1, HIGHCPU_GCE_INSTANCE),
+            main=(1, HIGHCPU_GCE_INSTANCE),
         )
 
         self._test_instance_groups(
-            {'master_instance_type': MICRO_GCE_INSTANCE},
-            master=(1, MICRO_GCE_INSTANCE)
+            {'main_instance_type': MICRO_GCE_INSTANCE},
+            main=(1, MICRO_GCE_INSTANCE)
         )
 
         # set instance_type in mrjob.conf, 3 instances
@@ -609,59 +609,59 @@ class GCEInstanceGroupTestCase(MockGoogleAPITestCase):
 
         self._test_instance_groups(
             {},
-            master=(1, DEFAULT_GCE_INSTANCE),
+            main=(1, DEFAULT_GCE_INSTANCE),
             core=(2, HIGHCPU_GCE_INSTANCE)
         )
 
         self._test_instance_groups(
-            {'master_instance_type': MICRO_GCE_INSTANCE,
+            {'main_instance_type': MICRO_GCE_INSTANCE,
              'instance_type': HIGHMEM_GCE_INSTANCE},
-            master=(1, MICRO_GCE_INSTANCE),
+            main=(1, MICRO_GCE_INSTANCE),
             core=(2, HIGHMEM_GCE_INSTANCE)
         )
 
-        # set master in mrjob.conf, 1 instance
-        self.set_in_mrjob_conf(master_instance_type=MICRO_GCE_INSTANCE)
+        # set main in mrjob.conf, 1 instance
+        self.set_in_mrjob_conf(main_instance_type=MICRO_GCE_INSTANCE)
 
         self._test_instance_groups(
             {},
-            master=(1, MICRO_GCE_INSTANCE))
+            main=(1, MICRO_GCE_INSTANCE))
 
         self._test_instance_groups(
-            {'master_instance_type': HIGHCPU_GCE_INSTANCE},
-            master=(1, HIGHCPU_GCE_INSTANCE))
+            {'main_instance_type': HIGHCPU_GCE_INSTANCE},
+            main=(1, HIGHCPU_GCE_INSTANCE))
 
-        # set master and worker in mrjob.conf, 2 instances
-        self.set_in_mrjob_conf(master_instance_type=MICRO_GCE_INSTANCE,
+        # set main and worker in mrjob.conf, 2 instances
+        self.set_in_mrjob_conf(main_instance_type=MICRO_GCE_INSTANCE,
                                instance_type=HIGHMEM_GCE_INSTANCE,
                                num_core_instances=2)
 
         self._test_instance_groups(
             {},
             core=(2, HIGHMEM_GCE_INSTANCE),
-            master=(1, MICRO_GCE_INSTANCE))
+            main=(1, MICRO_GCE_INSTANCE))
 
         self._test_instance_groups(
             {'instance_type': HIGHCPU_GCE_INSTANCE},
             core=(2, HIGHCPU_GCE_INSTANCE),
-            master=(1, MICRO_GCE_INSTANCE))
+            main=(1, MICRO_GCE_INSTANCE))
 
         self._test_instance_groups(
             {'instance_type': HIGHMEM_GCE_INSTANCE},
             core=(2, HIGHMEM_GCE_INSTANCE),
-            master=(1, MICRO_GCE_INSTANCE))
+            main=(1, MICRO_GCE_INSTANCE))
 
     def test_core_and_task_on_demand_instances(self):
         self.assertRaises(
             DataprocException,
             self._test_instance_groups,
-            {'master_instance_type': MICRO_GCE_INSTANCE,
+            {'main_instance_type': MICRO_GCE_INSTANCE,
              'core_instance_type': HIGHCPU_GCE_INSTANCE,
              'task_instance_type': HIGHMEM_GCE_INSTANCE,
              'num_core_instances': 5,
              'num_task_instances': 20,
              },
-            master=(1, MICRO_GCE_INSTANCE),
+            main=(1, MICRO_GCE_INSTANCE),
             core=(5, HIGHCPU_GCE_INSTANCE),
             task=(20, HIGHMEM_GCE_INSTANCE)
         )
@@ -672,12 +672,12 @@ class GCEInstanceGroupTestCase(MockGoogleAPITestCase):
              'num_core_instances': 5,
              'num_task_instances': 20,
              },
-            master=(1, DEFAULT_GCE_INSTANCE),
+            main=(1, DEFAULT_GCE_INSTANCE),
             core=(5, HIGHCPU_GCE_INSTANCE),
             task=(20, HIGHCPU_GCE_INSTANCE))
 
 
-class MasterBootstrapScriptTestCase(MockGoogleAPITestCase):
+class MainBootstrapScriptTestCase(MockGoogleAPITestCase):
 
     def test_usr_bin_env(self):
         runner = DataprocJobRunner(conf_paths=[],
@@ -686,15 +686,15 @@ class MasterBootstrapScriptTestCase(MockGoogleAPITestCase):
 
         runner._add_bootstrap_files_for_upload()
 
-        self.assertIsNotNone(runner._master_bootstrap_script_path)
-        self.assertTrue(os.path.exists(runner._master_bootstrap_script_path))
+        self.assertIsNotNone(runner._main_bootstrap_script_path)
+        self.assertTrue(os.path.exists(runner._main_bootstrap_script_path))
 
-        with open(runner._master_bootstrap_script_path) as f:
+        with open(runner._main_bootstrap_script_path) as f:
             lines = [line.rstrip() for line in f]
 
         self.assertEqual(lines[0], '#!/usr/bin/env bash -e')
 
-    def test_create_master_bootstrap_script(self):
+    def test_create_main_bootstrap_script(self):
         # create a fake src tarball
         foo_py_path = os.path.join(self.tmp_dir, 'foo.py')
         with open(foo_py_path, 'w'):
@@ -716,10 +716,10 @@ class MasterBootstrapScriptTestCase(MockGoogleAPITestCase):
 
         runner._add_bootstrap_files_for_upload()
 
-        self.assertIsNotNone(runner._master_bootstrap_script_path)
-        self.assertTrue(os.path.exists(runner._master_bootstrap_script_path))
+        self.assertIsNotNone(runner._main_bootstrap_script_path)
+        self.assertTrue(os.path.exists(runner._main_bootstrap_script_path))
 
-        with open(runner._master_bootstrap_script_path) as f:
+        with open(runner._main_bootstrap_script_path) as f:
             lines = [line.rstrip() for line in f]
 
         self.assertEqual(lines[0], '#!/bin/sh -ex')
@@ -781,7 +781,7 @@ class MasterBootstrapScriptTestCase(MockGoogleAPITestCase):
                                    bootstrap_python=False)
 
         runner._add_bootstrap_files_for_upload()
-        self.assertIsNone(runner._master_bootstrap_script_path)
+        self.assertIsNone(runner._main_bootstrap_script_path)
 
     def test_bootstrap_mrjob_uses_python_bin(self):
         # use all the bootstrap options
@@ -790,8 +790,8 @@ class MasterBootstrapScriptTestCase(MockGoogleAPITestCase):
                                    python_bin=['anaconda'])
 
         runner._add_bootstrap_files_for_upload()
-        self.assertIsNotNone(runner._master_bootstrap_script_path)
-        with open(runner._master_bootstrap_script_path, 'r') as f:
+        self.assertIsNotNone(runner._main_bootstrap_script_path)
+        with open(runner._main_bootstrap_script_path, 'r') as f:
             content = f.read()
 
         self.assertIn('sudo anaconda -m compileall -q -f', content)
@@ -802,8 +802,8 @@ class MasterBootstrapScriptTestCase(MockGoogleAPITestCase):
         self.start(patch('mrjob.dataproc.DataprocJobRunner._sh_bin',
                          return_value=['/bin/bash']))
         runner._add_bootstrap_files_for_upload()
-        self.assertIsNotNone(runner._master_bootstrap_script_path)
-        with open(runner._master_bootstrap_script_path) as f:
+        self.assertIsNotNone(runner._main_bootstrap_script_path)
+        with open(runner._main_bootstrap_script_path) as f:
             lines = list(f)
 
         self.assertEqual(lines[0].strip(), '#!/bin/bash')
@@ -814,8 +814,8 @@ class MasterBootstrapScriptTestCase(MockGoogleAPITestCase):
         self.start(patch('mrjob.dataproc.DataprocJobRunner._sh_pre_commands',
                          return_value=['garply', 'quux']))
         runner._add_bootstrap_files_for_upload()
-        self.assertIsNotNone(runner._master_bootstrap_script_path)
-        with open(runner._master_bootstrap_script_path) as f:
+        self.assertIsNotNone(runner._main_bootstrap_script_path)
+        with open(runner._main_bootstrap_script_path) as f:
             lines = list(f)
 
         self.assertEqual([line.strip() for line in lines[1:3]],
